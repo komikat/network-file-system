@@ -1,2 +1,3 @@
-Cock and Balls
-I can fall out the sky and I still won't feel nothin' (woah, what? What? What?)
+ERROR CODES:
+
+001: issue with directory structure/permissions in storage server
