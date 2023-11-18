@@ -1,15 +1,30 @@
-command_id
-"%d " ++
+command_id // strcat("%d", "%s")
 1 ss join ns
 "%s"
 "[path]"
 
+TREE LOCK
 2 create file
 "%s %d %d"
 "path perms type"
 
 3 delete
+"%d %s"
+"ssid path"
+
 4 copy
+"%d %d %s"
+"ssid1 ssid2 path"
+
+TREE NOT LOCK
 5 read
+"%s"
+"path"
+
 6 write
+"%d %s"
+"ssid path"
+
 7 getinfo
+"%d %s"
+"ssid path"
