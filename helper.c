@@ -15,7 +15,7 @@ int initserver(char *addr, char *port) {
     if ((status = getaddrinfo(addr, port, &hints, &result)) != 0) {
         fprintf(stderr, "Error with getting address: %s\n",
                 gai_strerror(status));
-        exit(1);
+        return -1;
     }
 
     // result -> linked list of addrinfos for localhost:PORT
@@ -36,13 +36,13 @@ int initserver(char *addr, char *port) {
 
     if (p == NULL) {
         fprintf(stderr, "Failed to bind\n");
-        exit(1);
+        return -1;
     }
 
     // listen for incoming connections
     if (listen(sockfd, BACKLOG) == -1) {
         fprintf(stderr, "Error listening: %d\n", errno);
-        exit(1);
+        return -1;
     }
 
     printf("Listening on port %s\n", port);
@@ -65,7 +65,7 @@ int initconn(char *addr, char *port) {
     if ((status = getaddrinfo(addr, port, &hints, &result)) != 0) {
         fprintf(stderr, "Error with getting address: %s\n",
                 gai_strerror(status));
-        exit(1);
+        return -1;
     }
 
     int sockfd; // socket descriptor
@@ -81,13 +81,13 @@ int initconn(char *addr, char *port) {
 
     if (p == NULL) {
         fprintf(stderr, "Failed to bind\n");
-        exit(1);
+        return -1;
     }
 
     if (connect(sockfd, result->ai_addr, result->ai_addrlen) == -1) {
         fprintf(stderr, "Error connecting to the server.\nAre you sure the "
                         "server is up?\n");
-        exit(1);
+        return -1;
     } else {
         printf("Connection established!\n");
     }

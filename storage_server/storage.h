@@ -1,9 +1,9 @@
-struct node {
-    char *name;
-    uint size;
+struct file {
+    char path[1024];
+    unsigned short size;
     int type;
-    struct node *parent;
-    struct node **children;
 };
 
-int send_error(int, int, char *);
+int sendFilesRecursively(char *, int sockfd);
+int sendData(char *, int);
+int sendError(int, int, char *);
