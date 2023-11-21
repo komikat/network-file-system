@@ -28,3 +28,6 @@ TREE NOT LOCK
 7 getinfo
 "%d %s"
 "ssid path"
+
+8 client join
+no parameters

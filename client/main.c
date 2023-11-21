@@ -20,12 +20,14 @@ void sender(int sockfd) {
 int main() {
     int sockfd = initconn("localhost", PORT_NSC);
 
-    printf("%s", "Message: ");
-    fgeter();
-    printf("%s\n", CLIENT_BUFFER);
-    sender(sockfd);
-
-    recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+    for (;;) {
+        printf("%s", "Message: ");
+        fgeter();
+        sender(sockfd);
+        recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+        if (strcmp(CLIENT_BUFFER, "END") == 0)
+            break;
+    }
 
     close(sockfd);
 }

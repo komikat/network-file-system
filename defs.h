@@ -17,13 +17,14 @@
 #include <time.h>
 #include <unistd.h>
 
-#define PORT_NSS "8010" // ns <-> ss
-#define PORT_NSC "8011" // client <-> ns
-#define PORT_SSC "8012" // client <-> ss
+#define PORT_NSS "8001" // ns <-> ss
+#define PORT_NSC "8002" // client <-> ns
+#define PORT_SSC "8003" // client <-> ss
 
 #define BACKLOG 10
 #define BUFFER 1024
 #define MAX_FILES_PER_DIRECTORY 256
+#define MAX_CLIENT 64 // max number of clients and servers
 
 #define HEARTBEAT 1
 

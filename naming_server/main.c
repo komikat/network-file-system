@@ -10,63 +10,129 @@ int no_stores = 0;
 char CLIENT_BUFFER[CLIENT_BUFFER_LENGTH];
 
 void *storage_listener(void *sfd_storag) {
-    int sfd_storage = *((int *)sfd_storag);
-    for (;;) {
+    int sfd_storage = *((int *) sfd_storag);
+
+    struct pollfd pfds[MAX_CLIENT]; // polls for each server
+
+    for (int storage_idx = 0; storage_idx < MAX_CLIENT; storage_idx++) {
+
         struct sockaddr_storage store_addr;
         socklen_t addr_size = sizeof store_addr;
-        int new_fd;
-        if ((new_fd = accept(sfd_storage, (struct sockaddr *)&store_addr,
-                             &addr_size)) == -1) {
+        int storage_new_sock;
+        if ((storage_new_sock =
+                     accept(sfd_storage, (struct sockaddr *) &store_addr,
+                            &addr_size)) == -1) {
             fprintf(stderr, "Issues accepting client reqs: %d\n", errno);
             exit(1);
         };
+        pfds[storage_idx].fd = storage_new_sock;
+        pfds[storage_idx].events = POLLIN;
 
-        storages[no_stores] = new_fd;
-        no_stores += 1;
-        pthread_t newstorage;
-        pthread_create(&newstorage, NULL, storage_handler, &new_fd);
-        pthread_join(newstorage, NULL);
+        int num = poll(pfds, 1, 2500);
+        if (num == 0) {
+            printf("Didn't get acknowledgement from server after accepting "
+                   "request!\n");
+        } else {
+            printf("%d\n", num);
+            storages[no_stores] = storage_new_sock;
+            no_stores += 1;
+            pthread_t newstorage;
+            pthread_create(&newstorage, NULL, storage_handler,
+                           &storage_new_sock);
+            pthread_join(newstorage, NULL);
+        }
     }
 }
 
+typedef struct client_args {
+    int client_idx;
+    int client_sock;
+    char address[INET6_ADDRSTRLEN];
+} *ctargs;
+
+void *client_handler(void *args) {
+    int client_idx = ((struct client_args *) args)->client_idx;
+    int client_sock = ((struct client_args *) args)->client_sock;
+    char *client_address = ((struct client_args *) args)->address;
+
+    printf("%s connected.\n", client_address);
+
+    for (;;) {
+        recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+
+        printf("(%s): %s\n", client_address, CLIENT_BUFFER);
+        if (strcmp(CLIENT_BUFFER, "END") == 0) {
+            printf("Client ended connection.\n");
+            close(client_sock);
+            int ret = 1;
+            pthread_exit(&ret);
+        }
+        // handle all other transactions here
+        // == begin transation
+        // == end transaction
+
+        strcpy(CLIENT_BUFFER, "SERVER REPLY");
+        send(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+    }
+
+}
+
+void *get_in_addr(struct sockaddr *sa) {
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in *) sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6 *) sa)->sin6_addr);
+}
+
+
 void *client_listener(void *sfd_client_pass) {
-    int sfd_client = *((int *)sfd_client_pass);
+    int main_listener = *((int *) sfd_client_pass);
 
     struct sockaddr_storage client_addr;
-    socklen_t addr_size = sizeof client_addr;
-    int client_new_sock;
-    if ((client_new_sock = accept(sfd_client, (struct sockaddr *)&client_addr,
-                                  &addr_size)) == -1) {
-        fprintf(stderr, "Issues accepting client reqs: %d\n", errno);
-        exit(1);
-    };
+    socklen_t addrlen;
 
-    printf("new client\n");
-    // recver(client_new_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+    struct pollfd client_fds[1];
+    client_fds[0].fd = main_listener;
+    client_fds[0].events = POLLIN;
 
-    struct pollfd pfds[1];
-    pfds[0].fd = client_new_sock;
-    pfds[0].events = POLLIN;
+    int client_count = 0;
+    pthread_t client_thread[MAX_CLIENT];
 
-    int num = poll(pfds, 1, 2500);
 
-    if (num == 0) {
-        printf("%s\n", "No requests!!!!!!");
-    } else {
-        int r;
-        if ((r = recv(client_new_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH,
-                      0)) == -1) {
-            fprintf(stderr, "Issues recv reqs: %d\n", errno);
-            exit(1);
-        };
-        printf("%s", CLIENT_BUFFER);
+    for (;;) {
+        // wait for new connections
+        // if new connection
+        // check if listener
+        // if listener => create a new thread
+        int poll_count = poll(client_fds, 1, -1);
+        int client_new_fd = accept(main_listener, (struct sockaddr *) &client_addr, &addrlen);
+
+        ctargs tmp = (ctargs) malloc(sizeof(struct client_args));
+        tmp->client_idx = client_count;
+        tmp->client_sock = client_new_fd;
+        char *res = inet_ntop(client_addr.ss_family,
+                              get_in_addr((struct sockaddr *) &client_addr), tmp->address, INET6_ADDRSTRLEN);
+
+
+        if (res == NULL)
+            strcpy(tmp->address, "::1:");
+
+
+        pthread_create(&client_thread[client_count], NULL, client_handler, (void *) tmp);
+        client_count++;
+
+        if (tmp->client_idx == MAX_CLIENT) {
+            break;
+        }
     }
+
 }
 
 // Function to initialize tree for a storage server
 // and keep receiving its messages
 void *storage_handler(void *sock) {
-    int sockfd = *((int *)sock);
+    int sockfd = *((int *) sock);
     int r;
     char buf[1024] = {0};
     int receiving = 1;
@@ -88,7 +154,7 @@ void *storage_handler(void *sock) {
             locked = 0;
         }
 
-        // if not over, get data and make node
+            // if not over, get data and make node
         else if (r > 0) {
 
             // delimiter if multiple nodes in buffer
@@ -100,7 +166,7 @@ void *storage_handler(void *sock) {
             while (tok != NULL) {
 
                 // make node
-                struct node *nd = (struct node *)malloc(sizeof(struct node));
+                struct node *nd = (struct node *) malloc(sizeof(struct node));
                 sscanf(tok, "%d %d %lld %s", &nd->type, &nd->perms, &nd->size,
                        namebuf);
                 int pos = 0, parentpos = 0;
@@ -110,8 +176,8 @@ void *storage_handler(void *sock) {
                         pos = i;
                     }
                 }
-                char *name = (char *)malloc(
-                    sizeof(char) * strlen(&namebuf[pos + 1]) + 2);
+                char *name = (char *) malloc(
+                        sizeof(char) * strlen(&namebuf[pos + 1]) + 2);
                 strcpy(name, &namebuf[pos + 1]);
                 nd->name = name;
                 nd->no_child = 0;
@@ -132,9 +198,9 @@ void *storage_handler(void *sock) {
                             parent->type == 1) {
                             nd->parent = parent;
                             parent->no_child += 1;
-                            parent->children = (struct node **)realloc(
-                                parent->children,
-                                sizeof(struct node *) * parent->no_child);
+                            parent->children = (struct node **) realloc(
+                                    parent->children,
+                                    sizeof(struct node *) * parent->no_child);
                             parent->children[parent->no_child - 1] = nd;
                             break;
                         } else
