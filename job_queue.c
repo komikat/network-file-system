@@ -4,10 +4,8 @@
 
 #include "job_queue.h"
 
-job front;
-job rear;
 
-void insert(int id, int type, int server, int client, enum Status status, char *job_string) {
+void insert(jq q, int id, int type, int server, int client, enum Status status, char *job_string) {
     job ptr = (job_ *) malloc(sizeof(job_));
     if (ptr == NULL) {
         perror("008: Memory exceeded\n");
@@ -23,23 +21,23 @@ void insert(int id, int type, int server, int client, enum Status status, char *
         strcpy(new_js, job_string);
         ptr->job_string = new_js;
 
-        if ((front == NULL) && (rear == NULL)) {
-            front = rear = ptr;
+        if ((q->front == NULL) && (q->rear == NULL)) {
+            q->front = q->rear = ptr;
         } else {
-            rear->next = ptr;
-            rear = ptr;
+            q->rear->next = ptr;
+            q->rear = ptr;
         }
     }
     printf("Node inserted\n");
 }
 
-job dequeue() {
-    if (front == NULL) {
+job dequeue(jq q) {
+    if (q->front == NULL) {
         printf("Underflow.\n");
         return NULL;
     } else {
-        job tmp = front;
-        front = front->next;
+        job tmp = q->front;
+        q->front = q->front->next;
         return tmp;
     }
 }

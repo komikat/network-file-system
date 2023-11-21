@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include "job_queue.h"
 
 #define PORT_NSS "8001" // ns <-> ss
 #define PORT_NSC "8002" // client <-> ns

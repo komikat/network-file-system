@@ -11,7 +11,7 @@ int initserver(char *addr, char *port) {
     hints.ai_family = AF_UNSPEC;     // ipv4/6
     hints.ai_socktype = SOCK_STREAM; // tcp
     hints.ai_flags = AI_PASSIVE;     // assigns the address of local host
-                                     // to the socket
+    // to the socket
 
     if ((status = getaddrinfo(addr, port, &hints, &result)) != 0) {
         fprintf(stderr, "Error with getting address: %s\n",
@@ -36,8 +36,8 @@ int initserver(char *addr, char *port) {
     }
 
     if (p == NULL) {
-        fprintf(stderr, "Failed to bind\n");
-        return -1;
+        fprintf(stderr, "Failed to bind: %s:%s\n", addr, port);
+        exit(1);
     }
 
     // listen for incoming connectionss
@@ -61,7 +61,7 @@ int initconn(char *addr, char *port) {
     hints.ai_family = AF_UNSPEC;     // ipv4/6
     hints.ai_socktype = SOCK_STREAM; // tcp
     hints.ai_flags = AI_PASSIVE;     // assigns the address of local host
-                                     // to the socket
+    // to the socket
 
     if ((status = getaddrinfo(addr, port, &hints, &result)) != 0) {
         fprintf(stderr, "Error with getting address: %s\n",

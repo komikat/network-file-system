@@ -6,16 +6,17 @@
 
 struct storage **storages = NULL;
 int no_stores = 0;
+int job_id = 1;
 
 char CLIENT_BUFFER[CLIENT_BUFFER_LENGTH];
 
 void *storage_listener(void *sfd_storag) {
-    int sfd_storage = *((int *)sfd_storag);
+    int sfd_storage = *((int *) sfd_storag);
     for (;;) {
         struct sockaddr_storage store_addr;
         socklen_t addr_size = sizeof store_addr;
         int new_fd;
-        if ((new_fd = accept(sfd_storage, (struct sockaddr *)&store_addr,
+        if ((new_fd = accept(sfd_storage, (struct sockaddr *) &store_addr,
                              &addr_size)) == -1) {
             fprintf(stderr, "Issues accepting client reqs: %d\n", errno);
             exit(1);
@@ -39,10 +40,11 @@ void *client_handler(void *args) {
     char *client_address = ((struct client_args *) args)->address;
 
     printf("%s connected.\n", client_address);
+    recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+    send(client_sock, "ACK", 4, 0);
 
     for (;;) {
         recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
-
         printf("(%s): %s\n", client_address, CLIENT_BUFFER);
         if (strcmp(CLIENT_BUFFER, "END") == 0) {
             printf("Client ended connection.\n");
@@ -51,21 +53,46 @@ void *client_handler(void *args) {
             pthread_exit(&ret);
         }
         // handle all other transactions here
-        // == begin transation
-        // == end transaction
+        // TODO: transaction
+        // == begin transation ===
+        // == end transaction ===
 
-        strcpy(CLIENT_BUFFER, "SERVER REPLY");
+        jq tmp = (jq) malloc(sizeof(jq_));
+        insert(tmp, job_id++, 1, 1, client_idx, QUEUED, CLIENT_BUFFER);
+
+        job result = dequeue(tmp);
+        strcpy(CLIENT_BUFFER, result->job_string);
         send(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
     }
 
 }
 
-void *get_in_addr(struct sockaddr *sa) {
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in *) sa)->sin_addr);
-    }
 
-    return &(((struct sockaddr_in6 *) sa)->sin6_addr);
+// Function to get IP address from socket
+char *getip(int sockfd) {
+    struct sockaddr_storage addr;
+    socklen_t addr_len = sizeof(addr);
+
+    if (getpeername(sockfd, (struct sockaddr *) &addr, &addr_len) == 0) {
+        // The socket is connected, and addr now contains the peer's address
+        char *ipstr = (char *) malloc(sizeof(char) * INET6_ADDRSTRLEN);
+        int port;
+
+        if (addr.ss_family == AF_INET) {
+            struct sockaddr_in *s = (struct sockaddr_in *) &addr;
+            port = ntohs(s->sin_port);
+            inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+        } else { // AF_INET6
+            struct sockaddr_in6 *s = (struct sockaddr_in6 *) &addr;
+            port = ntohs(s->sin6_port);
+            inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
+        }
+
+        // printf("Peer IP address: %s\n", ipstr);
+        return ipstr;
+    } else {
+        perror("Could not get IP address...\n");
+    }
 }
 
 
@@ -94,13 +121,7 @@ void *client_listener(void *sfd_client_pass) {
         ctargs tmp = (ctargs) malloc(sizeof(struct client_args));
         tmp->client_idx = client_count;
         tmp->client_sock = client_new_fd;
-        char *res = inet_ntop(client_addr.ss_family,
-                              get_in_addr((struct sockaddr *) &client_addr), tmp->address, INET6_ADDRSTRLEN);
-
-
-        if (res == NULL)
-            strcpy(tmp->address, "::1:");
-
+        strcpy(tmp->address, getip(client_new_fd));
 
         pthread_create(&client_thread[client_count], NULL, client_handler, (void *) tmp);
         client_count++;
@@ -112,32 +133,6 @@ void *client_listener(void *sfd_client_pass) {
 
 }
 
-// Function to get IP address from socket
-char *getip(int sockfd) {
-    struct sockaddr_storage addr;
-    socklen_t addr_len = sizeof(addr);
-
-    if (getpeername(sockfd, (struct sockaddr*)&addr, &addr_len) == 0) {
-        // The socket is connected, and addr now contains the peer's address
-        char *ipstr = (char *)malloc(sizeof(char) * INET6_ADDRSTRLEN);
-        int port;
-
-        if (addr.ss_family == AF_INET) {
-            struct sockaddr_in *s = (struct sockaddr_in *)&addr;
-            port = ntohs(s->sin_port);
-            inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
-        } else { // AF_INET6
-            struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
-            port = ntohs(s->sin6_port);
-            inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
-        }
-
-        // printf("Peer IP address: %s\n", ipstr);
-        return ipstr;
-    } else {
-        perror("Could not get IP address...\n");
-    }
-}
 
 // Function to print tree
 void printTree(struct node *nod) {
@@ -160,13 +155,13 @@ void *storage_handler(void *sock) {
     struct node *parent = NULL;
 
     // Create storage server entry
-    struct storage *entry = (struct storage *)malloc(sizeof(struct storage));
+    struct storage *entry = (struct storage *) malloc(sizeof(struct storage));
     entry->id = no_stores;
     entry->red1 = -1;
     entry->red2 = -1;
     entry->ip = getip(sockfd);
     no_stores += 1;
-    storages = (struct storage **)realloc(storages, sizeof(struct storage *) * no_stores);
+    storages = (struct storage **) realloc(storages, sizeof(struct storage *) * no_stores);
     storages[no_stores - 1] = entry;
 
     // Loop that receives and initializes tree
@@ -178,7 +173,7 @@ void *storage_handler(void *sock) {
             fprintf(stderr, "Issues recv reqs: %d\n", errno);
             exit(1);
         }
-        // if not over, get data and make node
+            // if not over, get data and make node
 
             // if not over, get data and make node
         else if (r > 0) {
@@ -213,8 +208,8 @@ void *storage_handler(void *sock) {
                         pos = i;
                     }
                 }
-                char *name = (char *)malloc(
-                    sizeof(char) * strlen(&namebuf[pos + 1]) + 2);
+                char *name = (char *) malloc(
+                        sizeof(char) * strlen(&namebuf[pos + 1]) + 2);
                 strcpy(name, &namebuf[pos + 1]);
                 nd->name = name;
                 nd->no_child = 0;
@@ -228,15 +223,16 @@ void *storage_handler(void *sock) {
                         entry->root = nd;
                         printf("First parent %s\n", parent->name);
                         break;
-                    }
-                    else {
-                        printf("Comparing: %s, %s, %d\n", parent->name, &(namebuf[parentpos + 1]), strlen(parent->name));
-                        if (strncmp(parent->name, &(namebuf[parentpos + 1]), strlen(parent->name)) == 0 && parent->type == 1) {
+                    } else {
+                        printf("Comparing: %s, %s, %d\n", parent->name, &(namebuf[parentpos + 1]),
+                               strlen(parent->name));
+                        if (strncmp(parent->name, &(namebuf[parentpos + 1]), strlen(parent->name)) == 0 &&
+                            parent->type == 1) {
                             nd->parent = parent;
                             parent->no_child += 1;
-                            parent->children = (struct node **)realloc(
-                                parent->children,
-                                sizeof(struct node *) * parent->no_child);
+                            parent->children = (struct node **) realloc(
+                                    parent->children,
+                                    sizeof(struct node *) * parent->no_child);
                             parent->children[parent->no_child - 1] = nd;
                             break;
                         } else
@@ -259,7 +255,7 @@ void *storage_handler(void *sock) {
             }
         }
     }
-    printf("Recieved\n");
+    printf("Recieved.\n");
     struct node *nod = storages[entry->id]->root;
     printf("Root: %s\n", nod->name);
     printf("ID: %d\nIP: %s\n\n", entry->id, entry->ip);
@@ -284,7 +280,7 @@ int main() {
     // keep accepting requests
 
     pthread_t storage_listen, client_listen;
-    // pthread_create(&storage_listen, NULL, storage_listener, &sfd_storage);
+    pthread_create(&storage_listen, NULL, storage_listener, &sfd_storage);
     pthread_create(&client_listen, NULL, client_listener, &sfd_client);
     pthread_join(storage_listen, NULL);
     pthread_join(client_listen, NULL);

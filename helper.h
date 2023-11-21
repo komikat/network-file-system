@@ -1,6 +1,7 @@
 #ifndef HELPER_H_
 #define HELPER_H_
-// #include "defs.h"
+
+#include "job_queue.h"
 
 struct node {
     int perms;
@@ -21,7 +22,9 @@ struct storage {
 };
 
 void recver(int sockfd, char *buf, int len, int flags);
+
 int initserver(char *addr, char *port);
+
 int initconn(char *addr, char *port);
 
 #endif // HELPER_H_
