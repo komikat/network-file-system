@@ -14,8 +14,8 @@ struct node {
 
 struct storage {
     int id;
-}
-
+};
+void recver(int sockfd, char *buf, int len, int flags);
 int initserver(char *addr, char *port);
 int initconn(char *addr, char *port);
 

@@ -3,22 +3,23 @@
 
 #include "helper.h"
 #include <arpa/inet.h>
+#include <dirent.h>
 #include <errno.h>
 #include <netdb.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <sys/stat.h>
 
-#define PORT_NSS "2049" // ns <-> ss
-#define PORT_NSC "2050" // client <-> ns
-#define PORT_SSC "2051" // client <-> ss
+#define PORT_NSS "8010" // ns <-> ss
+#define PORT_NSC "8011" // client <-> ns
+#define PORT_SSC "8012" // client <-> ss
 
 #define BACKLOG 10
 #define BUFFER 1024
@@ -33,5 +34,7 @@
 #define READY 2
 
 // char ROOT_ADDRESS[] = "./storage_server/root"
+// client stuff
+#define CLIENT_BUFFER_LENGTH 1024
 
 #endif

@@ -2,7 +2,6 @@
 #include "defs.h"
 #include <arpa/inet.h>
 
-;
 int initserver(char *addr, char *port) {
     int status, sockfd;
     struct addrinfo hints;
@@ -41,7 +40,7 @@ int initserver(char *addr, char *port) {
         return -1;
     }
 
-    // listen for incoming connections
+    // listen for incoming connectionss
     if (listen(sockfd, BACKLOG) == -1) {
         fprintf(stderr, "Error listening: %d\n", errno);
         return -1;
@@ -95,4 +94,13 @@ int initconn(char *addr, char *port) {
     }
 
     return sockfd;
+}
+
+// recv with errors
+void recver(int sockfd, char *buf, int len, int flags) {
+    int r;
+    if ((r = recv(sockfd, buf, len, flags)) == -1) {
+        fprintf(stderr, "Issues recv reqs: %d\n", errno);
+        exit(1);
+    };
 }
