@@ -58,11 +58,8 @@ int main() {
         else fprintf(stderr, "Error in sending data to server...\n");
     }
 
-    char stop[] = "STOP";
-    if ((send(sockfd, stop, strlen(stop), 0)) == -1) {
-        fprintf(stderr, "Issues sending message: %d\n", errno);
-        return 2;
-    }
+    char stop[] = "STOP;";
+    sendData(stop, sockfd);
 
     pthread_mutex_destroy(&serverlock);
     close(sockfd);
