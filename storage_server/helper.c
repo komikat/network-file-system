@@ -25,9 +25,9 @@ int sendFilesRecursively(char *rootPath, int sockfd) {
         if (!(S_ISDIR(statbuf.st_mode))) {
             // Print the file path
             char *data = (char *)malloc(sizeof(char) * 1040);
-            snprintf(data, strlen(path) + 16, "0 %d %s", entry->d_reclen, path);     // 0 for file, size, path
+            snprintf(data, strlen(path) + 16, "0 %o %lld %s;", statbuf.st_mode, (long long int)statbuf.st_size, path);     // 0 for file, size, path
             int check = 1;
-            printf("%s\n", data);
+            // printf("%s\n", data);
             while (check){  // Tries to send thrice
                 check *= sendData(data, sockfd);
                 if (check >= 8) {
@@ -42,9 +42,9 @@ int sendFilesRecursively(char *rootPath, int sockfd) {
             if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
                 // Recursively list files in the subdirectory
                 char *data = (char *)malloc(sizeof(char) * 1040);
-                snprintf(data, strlen(path) + 16, "1 %d %s", entry->d_reclen, path);     // 1 for folder, size, path
+                snprintf(data, strlen(path) + 16, "1 %o %lld %s;", statbuf.st_mode, (long long int)statbuf.st_size, path);     // 1 for folder, size, path
                 int check = 1;
-                printf("%s\n", data);
+                // printf("%s\n", data);
                 while (check){  // Tries to send thrice
                     check *= sendData(data, sockfd);
                     if (check >= 8) {
@@ -78,12 +78,12 @@ int sendError(int sockfd, int code, char *message) {
 // Sends messages with any data
 // 0 on failure, 1 on success
 int sendData(char *data, int sockfd) {
-    // printf("Sending %s\n", fl->path);
+    printf("Sending %s\n", data);
     if ((send(sockfd, data, strlen(data), 0)) == -1) {
         fprintf(stderr, "Issues sending message: %d\n", errno);
         return 2;
     }
-    // printf("Sent\n");
+    printf("Sent\n");
     return 0;
 }
 

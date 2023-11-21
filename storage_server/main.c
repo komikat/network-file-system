@@ -32,9 +32,15 @@ int main() {
     // pthread_join(heart, NULL);
 
     char root[] = "./storage_server/root";
+
+    struct stat statbuf;
+    if (stat(root, &statbuf) == -1) {
+        perror("Error getting file status");
+    }
+
     
     char *data = (char *)malloc(sizeof(char) * 1040);
-    snprintf(data, strlen(root) + 5, "1 0 %s", root);
+    snprintf(data, strlen(root) + 24, "1 %o 0 %s;", statbuf.st_mode, root);
     int check = 1;
     while (check){  // Tries to send thrice
         check *= sendData(data, sockfd);

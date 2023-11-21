@@ -1,3 +1,6 @@
+#ifndef _DEFS_H_
+#define _DEFS_H_
+
 #include "helper.h"
 #include <arpa/inet.h>
 #include <errno.h>
@@ -28,3 +31,7 @@
 #define INITIALIZING 0
 #define CONNECTING_TO_STORAGE 1
 #define READY 2
+
+// char ROOT_ADDRESS[] = "./storage_server/root"
+
+#endif

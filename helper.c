@@ -1,6 +1,8 @@
 #include "helper.h"
+#include "defs.h"
 #include <arpa/inet.h>
 
+;
 int initserver(char *addr, char *port) {
     int status, sockfd;
     struct addrinfo hints;

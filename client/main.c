@@ -1,7 +1,6 @@
 #include "./../defs.h"
 
 #define BACKLOG 10
-#define BUFFER 100
 
 int main() {
     int sockfd = initconn("localhost", PORT_NSC);
