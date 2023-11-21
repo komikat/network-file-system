@@ -69,8 +69,7 @@ void *client_handler(void *args) {
             close(client_sock);
             int ret = 1;
             pthread_exit(&ret);
-        }
-        else {
+        } else {
 
             // Separate command and path, branch for other arguments
             char *command = strtok(CLIENT_BUFFER, " ");
@@ -80,7 +79,7 @@ void *client_handler(void *args) {
             char **list = NULL;
             char *t = strtok(path, "/");
             while (t != NULL) {
-                list = (char **)realloc(list, sizeof(char *) * elno);
+                list = (char **) realloc(list, sizeof(char *) * elno);
                 list[elno - 1] = t;
             }
 
@@ -112,7 +111,7 @@ void *client_handler(void *args) {
             //     //
             // }
             // else if (strcmp(command, "GETINFO") == 0) {
-                
+
             // }
         }
         // handle all other transactions here
@@ -276,6 +275,7 @@ void *storage_handler(void *sock) {
                 nd->no_child = 0;
                 nd->parent = NULL;
                 nd->children = NULL;
+                nd->path = namebuf;
 
                 // find parent and assign
                 while (1) {

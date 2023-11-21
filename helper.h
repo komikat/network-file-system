@@ -11,6 +11,7 @@ struct node {
     struct node *parent;
     int no_child;
     struct node **children;
+    char *path;
 };
 
 struct storage {
