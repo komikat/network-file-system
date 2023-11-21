@@ -55,6 +55,7 @@ updates from SS to NM:
 "REQ <jobid> <data>"
 "REQ <jobid> STOP"
 "DISCONNECT"
+"ERROR <jobid> <code> <message>"        // job terminates if error
 
 TRANSACTION FLOW:
     type of transaction determined
@@ -64,6 +65,7 @@ TRANSACTION FLOW:
     transfer of data
     storage server unlocked
     acknowledgement sent to naming server by storage server and/or client
+    Client request array and server requests count updated
     naming server tree locked
     tree changes
     naming server tree unlocked
@@ -73,3 +75,9 @@ TRANSACTION FLOW:
     in the storage server using one of the backup servers
 
 After creating a file, storage server sends its details like normal (most importantly size)
+
+REQUEST PROCESSING FLOW:
+    Client sends request to NM
+    NM updates client requests array
+    NM updates server requests count
+    if request count per server is 
