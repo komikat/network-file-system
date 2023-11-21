@@ -80,4 +80,15 @@ REQUEST PROCESSING FLOW:
     Client sends request to NM
     NM updates client requests array
     NM updates server requests count
-    if request count per server is 
+    Job request sent to server
+    Request added to job queue
+    data is sent to NM occasionally and once job is done, STOP is sent
+    Request array and job count handled on client
+
+A wait array on Storage server is maintained and its count is maintained on NM
+If the count is full, job is rejected with an error message.
+
+FORMAT OF <path>: (either of these)
+    <id>:dir/dir/.../file
+    dir/dir/.../file
+    file
