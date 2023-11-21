@@ -1,7 +1,26 @@
-#include "./../defs.h"
-#include "./naming.h"
+#include "search.h"
 
-// Function to print tree
+typedef struct r_result_ {
+    struct node *found;
+    struct r_result_ *next;
+} *rresult;
+
+rresult rsearch(char *searchstr, struct node *root, rresult final) {
+    if (strstr(root->path, searchstr) != NULL) {
+        rresult tmp = (rresult) malloc(sizeof(struct r_result_));
+
+        tmp->found = root;
+        tmp->next = NULL;
+
+        final->next = tmp;
+    }
+
+    for (int i = 0; i < root->no_child; i++) {
+        rsearch(searchstr, root, final);
+    }
+
+    return final;
+}
 
 struct node *absoluteSearch(char **searchStr, int elno, struct node *root) {
     if (strcmp(searchStr[0], root->name) == 0) {
@@ -14,17 +33,3 @@ struct node *absoluteSearch(char **searchStr, int elno, struct node *root) {
     } else return NULL;
 }
 
-// void searchServer(char **searchstr, struct node *nd, int elno, int id) {
-//     if (strcmp(nd->name, searchstr[0]) == 0) {
-//         if(elno == 1) {
-//             res->len += 1;
-//             res->list = (struct node **)realloc(sizeof(struct node *) * res->len);
-//             res->list[res->len - 1] = nd;
-//         }
-//     }
-//     else {
-//         for (int i = 0; i < nd->no_child; i++) {
-//             searchServer(&searchstr[1], );
-//         }
-//     }
-// }
