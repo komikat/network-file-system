@@ -32,7 +32,7 @@ int main() {
     strcpy(CLIENT_BUFFER, "ACK");
     sender(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH);
     recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
-
+    FILE * peter = fopen("log.txt","a");
     if (strcmp(CLIENT_BUFFER, "ACK") == 0) {
         while (1) {
             printf("%s", "Message: ");
@@ -62,7 +62,7 @@ int main() {
             }
 
 
-
+            fputs(msg_real, peter);
             sender(sockfd,msg_real, strlen(msg_real));
 
 
@@ -74,10 +74,16 @@ int main() {
                 recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
                 char opt[CLIENT_BUFFER_LENGTH];
                 char ip[CLIENT_BUFFER_LENGTH];
-                fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
-                opt[strcspn(opt, "\n")] = 0;
-                selecting_option(CLIENT_BUFFER,atoi(opt));
-                sender(sockfd,msg_real,CLIENT_BUFFER_LENGTH);
+                fscanf(CLIENT_BUFFER,"%s %s",ip,opt);
+                int storagesock = initconn(ip, PORT_SSC);
+                sender(storagesock, msg_real, strlen(msg_real));
+                recver(storagesock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+                close(storagesock);
+                if(strncmp("ERROR",CLIENT_BUFFER,5)){
+                    sender(sockfd,"YES",4);
+                }else{
+                    sender(sockfd,"NO",3);
+                }
             }else if(!strcmp(token, "DELETE")){
                 recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
                 char opt[CLIENT_BUFFER_LENGTH];
@@ -85,11 +91,15 @@ int main() {
                 fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
                 opt[strcspn(opt, "\n")] = 0;
                 selecting_option(CLIENT_BUFFER,atoi(opt));
-                sprintf(OPTION_BUFFER,"%s %s",ip,opt);
                 int storagesock = initconn(ip, PORT_SSC);
                 sender(storagesock, msg_real, strlen(msg_real));
                 recver(storagesock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
                 close(storagesock);
+                if(strncmp("ERROR",CLIENT_BUFFER,5)){
+                    sender(sockfd,"YES",4);
+                }else{
+                    sender(sockfd,"no",3);
+                }
             }else if(!strcmp(token,"LIST")){
                 recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
                 char opt[CLIENT_BUFFER_LENGTH];
@@ -129,6 +139,12 @@ int main() {
                 close(storagesock);
             }else if(!strcmp(token, "GETINFO")){
                 recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+                char opt[CLIENT_BUFFER_LENGTH];
+                char ip[CLIENT_BUFFER_LENGTH];
+                fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
+                opt[strcspn(opt, "\n")] = 0;
+                selecting_option(CLIENT_BUFFER,atoi(opt));
+                sender(sockfd, OPTION_BUFFER, CLIENT_BUFFER_LENGTH);
             }
             printf("%s", CLIENT_BUFFER);
             // sender(sockfd, msg_real, strlen(msg_real));
@@ -163,6 +179,6 @@ int main() {
         printf("Wrong ACKKNOWLEDGEMENT recvd.\nAborting.\n");
         gracedc(sockfd);
     }
-
+    fclose(peter);
     close(sockfd);
 }
