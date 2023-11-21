@@ -1,22 +1,30 @@
 #include "search.h"
 
-typedef struct r_result_ {
-    struct node *found;
-    struct r_result_ *next;
-} *rresult;
 
 rresult rsearch(char *searchstr, struct node *root, rresult final) {
-    if (strstr(root->path, searchstr) != NULL) {
+    // printf("searching for: %s, root: %s\n", searchstr, root->path);
+    if (root != NULL && strlen(root->path) > strlen(searchstr) && strstr(root->path, searchstr) != NULL) {
         rresult tmp = (rresult) malloc(sizeof(struct r_result_));
+        if (tmp == NULL) {
+            exit(EXIT_FAILURE);
+        }
 
         tmp->found = root;
         tmp->next = NULL;
 
-        final->next = tmp;
+        if (final == NULL) {
+            final = tmp;
+        } else {
+            rresult current = final;
+            while (current->next != NULL) {
+                current = current->next;
+            }
+            current->next = tmp;
+        }
     }
 
-    for (int i = 0; i < root->no_child; i++) {
-        rsearch(searchstr, root, final);
+    for (int i = 0; root != NULL && i < root->no_child; i++) {
+        final = rsearch(searchstr, root->children[i], final);
     }
 
     return final;

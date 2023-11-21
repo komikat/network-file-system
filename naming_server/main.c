@@ -1,5 +1,7 @@
 #include "./../defs.h"
 #include "naming.h"
+#include "search.h"
+#include "./../job_queue.h"
 
 #define BACKLOG 10
 // #define MAX_STORES 64
@@ -61,6 +63,11 @@ void *client_handler(void *args) {
     recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
     send(client_sock, "ACK", 4, 0);
 
+
+
+    // job result = dequeue(tmp);
+    // strcpy(CLIENT_BUFFER, "test");
+
     for (;;) {
         recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
         printf("(%s): %s\n", client_address, CLIENT_BUFFER);
@@ -69,61 +76,48 @@ void *client_handler(void *args) {
             close(client_sock);
             int ret = 1;
             pthread_exit(&ret);
-        } else {
-
-            // Separate command and path, branch for other arguments
-            char *command = strtok(CLIENT_BUFFER, " ");
-            char *path = strtok(CLIENT_BUFFER, " ");
-
-            int elno = 1;
-            char **list = NULL;
-            char *t = strtok(path, "/");
-            while (t != NULL) {
-                list = (char **) realloc(list, sizeof(char *) * elno);
-                list[elno - 1] = t;
-            }
-
-            printf("Command: %s\n Path:\n", command);
-            for (int i = 0; i < elno; i++) printf("%s ", list[i]);
-            printf("\n\n");
-
-            // if (strcmp(command, "LIST") == 0) {
-            //     // struct searchres *res = (struct searchres *)malloc(sizeof(struct searchres));
-            //     // res->list = NULL;
-            //     // res->len = 0;
-            //     for (int i = 0; i < no_stores; i++) {
-            //         absoluteSearch(list, storages[i]->root, elno, res);
-            //     }
-            // }
-            // else if (strcmp(command, "CREATE") == 0) {
-            //     //
-            // }
-            // else if (strcmp(command, "DELETE") == 0) {
-            //     //
-            // }
-            // else if (strcmp(command, "COPY") == 0) {
-            //     //
-            // }
-            // else if (strcmp(command, "READ") == 0) {
-            //     //
-            // }
-            // else if (strcmp(command, "WRITE") == 0) {
-            //     //
-            // }
-            // else if (strcmp(command, "GETINFO") == 0) {
-
-            // }
         }
+        printf("%s\n", CLIENT_BUFFER);
+        if (strstr(CLIENT_BUFFER, "LIST") == 0) {
+            // struct searchres *res = (struct searchres *)malloc(sizeof(struct searchres));
+            // res->list = NULL;
+            // res->len = 0;
+            rresult tmp = (struct r_result_ *) malloc(sizeof(struct r_result_));
+            printf("client: %s\n", CLIENT_BUFFER);
+
+            rsearch(&CLIENT_BUFFER[4], storages[0]->root, tmp);
+
+            while (tmp != NULL) {
+                if (tmp->found != NULL && tmp->found->path != NULL)
+                    printf("%s\n", tmp->found->path);
+                tmp = tmp->next;
+            }
+        }
+        // else if (strcmp(command, "CREATE") == 0) {
+        //     //
+        // }
+        // else if (strcmp(command, "DELETE") == 0) {
+        //     //
+        // }
+        // else if (strcmp(command, "COPY") == 0) {
+        //     //
+        // }
+        // else if (strcmp(command, "READ") == 0) {
+        //     //
+        // }
+        // else if (strcmp(command, "WRITE") == 0) {
+        //     //
+        // }
+        // else if (strcmp(command, "GETINFO") == 0) {
+
+        // }
+
         // handle all other transactions here
         // TODO: transaction
         // == begin transation ===
         // == end transaction ===
 
-        jq tmp = (jq) malloc(sizeof(jq_));
-        insert(tmp, job_id++, 1, 1, client_idx, QUEUED, CLIENT_BUFFER);
-
-        job result = dequeue(tmp);
-        strcpy(CLIENT_BUFFER, result->job_string);
+        // strcpy(CLIENT_BUFFER, "test");
         send(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
     }
 
@@ -196,6 +190,12 @@ void *client_listener(void *sfd_client_pass) {
 }
 
 
+void *manager(void *args_job) {
+    job job_todo = ((job) args_job);
+
+
+}
+
 // Function to initialize tree for a storage server
 // and keep receiving its messages
 void *storage_handler(void *sock) {
@@ -261,6 +261,7 @@ void *storage_handler(void *sock) {
                 int temp;
                 sscanf(tok, "REQ %d %d %o %lld %s", &temp, &nd->type, &nd->perms, &nd->size,
                        namebuf);
+                nd->path = strdup(namebuf);
                 int pos = 0, parentpos = 0;
                 for (int i = 0; i < strlen(namebuf); i++) {
                     if (namebuf[i] == '/') {
@@ -275,7 +276,6 @@ void *storage_handler(void *sock) {
                 nd->no_child = 0;
                 nd->parent = NULL;
                 nd->children = NULL;
-                nd->path = namebuf;
 
                 // find parent and assign
                 while (1) {
@@ -322,29 +322,6 @@ void *storage_handler(void *sock) {
     printf("ID: %d\nIP: %s\n\n", entry->id, entry->ip);
     printTree(storages[entry->id]->root, 0);
 
-    // TEST
-    while (1) {
-        char buffer[256];
-        printf("%s", "Message: ");
-        fgets(buffer, 256, stdin);
-        buffer[strcspn(buffer, "\n")] = 0;
-        if ((send(sockfd, buffer, strlen(buffer), 0)) == -1) {
-            fprintf(stderr, "Issues sending req: %d\n", errno);
-            exit(0);
-        };
-        // recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
-        if (strcmp(CLIENT_BUFFER, "END") == 0)
-            break;
-    }
-    // TEST
-
-    // while (1) {
-    //     if ((r = recv(sockfd, buf, 1024, 0)) == -1) {
-    //         fprintf(stderr, "Issues recv reqs: %d\n", errno);
-    //         exit(1);
-    //     };
-    //     printf("Buffer: %s\n", buf);
-    // }
 }
 
 // struct node **searchServer(char *searchstr, int id) {
