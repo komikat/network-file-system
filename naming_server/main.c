@@ -1,5 +1,13 @@
 #include "./../defs.h"
 #include "naming.h"
+void printTree(struct node *nod) {
+    printf("%s\n", nod->name);
+    if (nod->type == 1) {
+        for (int i = 0; i < nod->no_child; i++) {
+            printTree(nod->children[i]);
+        }
+    }
+}
 
 #define BACKLOG 10
 // #define MAX_STORES 64
