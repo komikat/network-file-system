@@ -10,4 +10,5 @@ stored. It will not be created automatically to avoid excessive control over the
 - 003: Unable to send data over the network
 - 004: Issues with polling for clients
 - 005: Error receiving request, asking to resend
+- 006: Invalid Request
 - 008: Memory exceeded

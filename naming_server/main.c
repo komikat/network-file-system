@@ -8,6 +8,21 @@ struct storage **storages = NULL;
 int no_stores = 0;
 int job_id = 1;
 
+struct searchres {
+    struct node **list;
+    int len;
+};
+
+// Function to print tree
+void printTree(struct node *nod) {
+    printf("%s\n", nod->name);
+    if (nod->type == 1) {
+        for (int i = 0; i < nod->no_child; i++) {
+            printTree(nod->children[i]);
+        }
+    }
+}
+
 // char **
 
 char CLIENT_BUFFER[CLIENT_BUFFER_LENGTH];
@@ -53,6 +68,51 @@ void *client_handler(void *args) {
             close(client_sock);
             int ret = 1;
             pthread_exit(&ret);
+        }
+        else {
+
+            // Separate command and path, branch for other arguments
+            char *command = strtok(CLIENT_BUFFER, " ");
+            char *path = strtok(CLIENT_BUFFER, " ");
+
+            int elno = 1;
+            char **list = NULL;
+            char *t = strtok(path, "/");
+            while (t != NULL) {
+                list = (char **)realloc(list, sizeof(char *) * elno);
+                list[elno - 1] = t;
+            }
+
+            printf("Command: %s\n Path:\n", command);
+            for (int i = 0; i < elno; i++) printf("%s ", list[i]);
+            printf("\n\n");
+
+            // if (strcmp(command, "LIST") == 0) {
+            //     struct searchres *res = (struct searchres *)malloc(sizeof(struct searchres));
+            //     res->list = NULL;
+            //     res->len = 0;
+            //     for (int i = 0; i < no_stores; i++) {
+            //         searchServer(list, storages[i]->root, elno, res);
+            //     }
+            // }
+            // else if (strcmp(command, "CREATE") == 0) {
+            //     //
+            // }
+            // else if (strcmp(command, "DELETE") == 0) {
+            //     //
+            // }
+            // else if (strcmp(command, "COPY") == 0) {
+            //     //
+            // }
+            // else if (strcmp(command, "READ") == 0) {
+            //     //
+            // }
+            // else if (strcmp(command, "WRITE") == 0) {
+            //     //
+            // }
+            // else if (strcmp(command, "GETINFO") == 0) {
+                
+            // }
         }
         // handle all other transactions here
         // TODO: transaction
@@ -156,6 +216,12 @@ void *storage_handler(void *sock) {
     storages = (struct storage **) realloc(storages, sizeof(struct storage *) * no_stores);
     storages[no_stores - 1] = entry;
 
+    printf("Sending %s\n", "TREE 1;");
+    if ((send(sockfd, "TREE 1;", strlen("TREE 1;"), 0)) == -1) {
+        fprintf(stderr, "Issues sending message: %d\n", errno);
+    }
+    printf("Sent\n");
+
     // Loop that receives and initializes tree
     while (receiving) {
 
@@ -183,7 +249,7 @@ void *storage_handler(void *sock) {
                 // printf("Token: %s\n\n", tok);
 
                 // Check if over
-                if (strcmp(tok, "STOP") == 0) {
+                if (strcmp(tok, "REQ -1 STOP;") == 0) {
                     receiving = 0;
                     locked = 0;
                     break;
@@ -191,7 +257,8 @@ void *storage_handler(void *sock) {
 
                 // make node
                 struct node *nd = (struct node *) malloc(sizeof(struct node));
-                sscanf(tok, "%d %d %lld %s", &nd->type, &nd->perms, &nd->size,
+                int temp;
+                sscanf(tok, "REQ %d %d %d %lld %s", &temp, &nd->type, &nd->perms, &nd->size,
                        namebuf);
                 int pos = 0, parentpos = 0;
                 for (int i = 0; i < strlen(namebuf); i++) {
@@ -213,11 +280,11 @@ void *storage_handler(void *sock) {
                     if (parent == NULL) {
                         parent = nd;
                         entry->root = nd;
-                        printf("First parent %s\n", parent->name);
+                        // printf("First parent %s\n", parent->name);
                         break;
                     } else {
-                        printf("Comparing: %s, %s, %d\n", parent->name, &(namebuf[parentpos + 1]),
-                               strlen(parent->name));
+                        // printf("Comparing: %s, %s, %d\n", parent->name, &(namebuf[parentpos + 1]),
+                        //        strlen(parent->name));
                         if (strncmp(parent->name, &(namebuf[parentpos + 1]), strlen(parent->name)) == 0 &&
                             parent->type == 1) {
                             nd->parent = parent;
@@ -252,7 +319,23 @@ void *storage_handler(void *sock) {
     printf("Root: %s\n", nod->name);
     printf("ID: %d\nIP: %s\n\n", entry->id, entry->ip);
     printTree(storages[entry->id]->root);
-    while (1);
+
+    // TEST
+    while (1) {
+        char buffer[256];
+        printf("%s", "Message: ");
+        fgets(buffer, 256, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;
+        if ((send(sockfd, buffer, strlen(buffer), 0)) == -1) {
+            fprintf(stderr, "Issues sending req: %d\n", errno);
+            exit(0);
+        };
+        // recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+        if (strcmp(CLIENT_BUFFER, "END") == 0)
+            break;
+    }
+    // TEST
+
     // while (1) {
     //     if ((r = recv(sockfd, buf, 1024, 0)) == -1) {
     //         fprintf(stderr, "Issues recv reqs: %d\n", errno);
@@ -262,9 +345,9 @@ void *storage_handler(void *sock) {
     // }
 }
 
-struct node **searchServer(char *searchstr, int id) {
+// struct node **searchServer(char *searchstr, int id) {
 
-}
+// }
 
 int main() {
     int sfd_client = initserver("localhost", PORT_NSC);

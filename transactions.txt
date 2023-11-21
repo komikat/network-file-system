@@ -33,7 +33,7 @@ TREE NOT LOCK
 transaction requests to NM from CLIENT:
 
   "LIST <path>;"
-* "CREATE <path> <type> <perms>;"              type=0 for file, type=1 for folder
+* "CREATE <path> <type>;"              type=0 for file, type=1 for folder
 * "DELETE <path>;"
 * "COPY <path> <path>;"
   "READ <path>;"

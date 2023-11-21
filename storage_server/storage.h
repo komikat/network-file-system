@@ -4,6 +4,6 @@ struct file {
     int type;
 };
 
-int sendFilesRecursively(char *, int sockfd);
+int sendFilesRecursively(char *, int, int);
 int sendData(char *, int);
 int sendError(int, int, char *);
