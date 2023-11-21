@@ -41,3 +41,21 @@ struct node *absoluteSearch(char **searchStr, int elno, struct node *root) {
     } else return NULL;
 }
 
+// void addNode(char *path, char *name, int type, long long int size, int perms) {
+//     struct node *nd = (struct node *)malloc(sizeof(struct node));
+//     nd->type = type;
+//     nd->size = size;
+//     nd->perms = perms;
+//     nd->path = (char *)malloc(sizeof(char) * strlen(path) + strlen(name) + 2);
+//     nd->name = (char *)malloc(sizeof(char) * strlen(name) + 2);
+//     sprintf(nd->path, "%s/%s", path, name);
+//     strcpy(nd->name, name);
+//     nd->no_child = 0;
+
+//     int elementss = 0;
+//     for (int i = 0; i < strlen(path); i++) {
+//         if (path[i] == '/') elementss += 1;
+//     }
+//     char **list = malloc();
+//     struct node *parent = absoluteSearch();
+// }

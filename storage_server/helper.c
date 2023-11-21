@@ -87,70 +87,78 @@ int sendData(char *data, int sockfd) {
     return 0;
 }
 
-// // Create a file or folder and return the size
-// char *createEntity(char *filePath, int type) {
+// Create a file or folder and return the size
+long long int createEntity(char *filePath, int type) {
 
-//     if (type) {
-//         mkdir(filePath);
-//     }
-//     else {
-//         FILE *file = fopen(filePath, "w");
-//     }
-//     struct stat statbuf;
-//     stat(filePath, &statbuf);
+    struct stat statbuf;
+    if (type) {
+        mkdir(filePath, 0777);
+        DIR *dir = opendir(filePath);
+        if (dir == NULL) {
+            perror("Error creating Directory...\n");
+            return -1;
+        }
+        closedir(dir);
+    }
+    else {
+        FILE *file = fopen(filePath, "w");
+        if (file == NULL) {
+            perror("Error creating File...\n");
+            return -1;
+        }
+        fclose(file);
+    }
 
-//     if (file == NULL) {
-//         perror("Error creating file");
-//         return -1;
-//     }
+    stat(filePath, &statbuf);
 
-//     fclose(file);
-//     return fopen(filePath, "r+"); // Open the file for reading and writing
-// }
+    return (long long int) statbuf.st_size; // Returning size
+}
 
-// int deleteDirectory(const char *path) {
-//     DIR *dir;
-//     struct dirent *entry;
 
-//     if (!(dir = opendir(path))) {
-//         perror("opendir");
-//         return -1;
-//     }
+// Delete directory or file
+int deleteDirectory(const char *path) {
+    DIR *dir;
+    struct dirent *entry;
 
-//     while ((entry = readdir(dir)) != NULL) {
-//         char fullpath[1024];
+    if (!(dir = opendir(path))) {
+        perror("opendir");
+        return -1;
+    }
 
-//         // Skip "." and ".." directories
-//         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-//             continue;
-//         }
+    while ((entry = readdir(dir)) != NULL) {
+        char fullpath[1024];
 
-//         snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
+        // Skip "." and ".." directories
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
 
-//         if (entry->d_type == DT_DIR) {
-//             // Recursive call to delete subdirectories
-//             if (!deleteDirectory(fullpath)) {
-//                 closedir(dir);
-//                 return 0;
-//             }
-//             else return -1;
-//         } else {
-//             // Delete regular files
-//             if (remove(fullpath) != 0) {
-//                 perror("remove");
-//                 closedir(dir);
-//                 return -1;
-//             }
-//         }
-//     }
+        snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
 
-//     closedir(dir);
+        if (entry->d_type == DT_DIR) {
+            // Recursive call to delete subdirectories
+            if (!deleteDirectory(fullpath)) {
+                closedir(dir);
+                return 0;
+            }
+            else return -1;
+        } else {
+            // Delete regular files
+            if (remove(fullpath) != 0) {
+                perror("remove");
+                closedir(dir);
+                return -1;
+            }
+        }
+    }
 
-//     // Remove the directory itself
-//     if (rmdir(path) != 0) {
-//         perror("rmdir");
-//         return 0;
-//     }
+    closedir(dir);
 
-//     return 1;
-// }
+    // Remove the directory itself
+    if (rmdir(path) != 0) {
+        perror("rmdir");
+        return -1;
+    }
+
+    return 0;
+}
