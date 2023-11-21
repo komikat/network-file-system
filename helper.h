@@ -12,6 +12,10 @@ struct node {
     struct node **children;
 };
 
+struct storage {
+    int id;
+}
+
 int initserver(char *addr, char *port);
 int initconn(char *addr, char *port);
 
