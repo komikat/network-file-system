@@ -38,7 +38,7 @@ transaction requests to NM from CLIENT:
 * "COPY <path> <path>;"
   "READ <path>;"
 * "WRITE <path> <opt> <localfile>/<text>;"     if opt=0, open localfile; if opt=1, send <text>
-  "GETINFO <path>"
+  "GETINFO <path>;"
 
 *are operations that communicate with SS
 
@@ -46,16 +46,17 @@ transaction requests to NM from CLIENT:
 transaction requests to SS:
 
 "REQ <jobid> <jobdata>;"
-"TREE"
-"TRANSFER"
+"TREE <jobid>;"
+"TRANSFER <serverdata> <jobid>;"
+"RECEIVE <serverdata> <jobid>;"
 
 updates from SS to NM:
 
-"HEARTBEAT"
-"REQ <jobid> <data>"
-"REQ <jobid> STOP"
-"DISCONNECT"
-"ERROR <jobid> <code> <message>"        // job terminates if error
+"HEARTBEAT;"
+"REQ <jobid> <data>;"
+"REQ <jobid> STOP;"
+"DISCONNECT;"
+"ERROR <jobid> <code> <message>;"        // job terminates if error
 
 TRANSACTION FLOW:
     type of transaction determined
