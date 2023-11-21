@@ -24,6 +24,9 @@ struct storage {
 
 void recver(int sockfd, char *buf, int len, int flags);
 
+
+void sender(int sockfd, char *buf, int len) ;
+
 int initserver(char *addr, char *port);
 
 int initconn(char *addr, char *port);
