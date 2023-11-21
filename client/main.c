@@ -10,22 +10,28 @@ void fgeter() {
     CLIENT_BUFFER[strcspn(CLIENT_BUFFER, "\n")] = 0;
 }
 
-void sender(int sockfd) {
+int sender(int sockfd) {
     if ((send(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0)) == -1) {
         fprintf(stderr, "Issues sending req: %d\n", errno);
-        exit(0);
+        return 0;
     };
+    return 1;
 }
 
 int main() {
     int sockfd = initconn("localhost", PORT_NSC);
+    int check = 0;
 
-    printf("%s", "Message: ");
-    fgeter();
-    printf("%s\n", CLIENT_BUFFER);
-    sender(sockfd);
+    while(1) {
+        printf("%s", "==> ");
+        fgeter();
 
-    recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+        if (strcmp(CLIENT_BUFFER, "EXIT") == 0) break;
+
+        if ((check = sender(sockfd))) printf("Command Sent: %s\n", CLIENT_BUFFER);
+
+        if (cehck) recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+    }
 
     close(sockfd);
 }

@@ -7,6 +7,8 @@
 struct storage **storages = NULL;
 int no_stores = 0;
 
+// char **
+
 char CLIENT_BUFFER[CLIENT_BUFFER_LENGTH];
 
 void *storage_listener(void *sfd_storag) {
@@ -85,16 +87,6 @@ char *getip(int sockfd) {
         return ipstr;
     } else {
         perror("Could not get IP address...\n");
-    }
-}
-
-// Function to print tree
-void printTree(struct node *nod) {
-    printf("%s\n", nod->name);
-    if (nod->type == 1) {
-        for (int i = 0; i < nod->no_child; i++) {
-            printTree(nod->children[i]);
-        }
     }
 }
 
@@ -211,10 +203,6 @@ void *storage_handler(void *sock) {
     //     };
     //     printf("Buffer: %s\n", buf);
     // }
-}
-
-struct node **searchServer(char *searchstr, int id) {
-    
 }
 
 int main() {

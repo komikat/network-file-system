@@ -24,14 +24,17 @@
 #define BACKLOG 10
 #define BUFFER 1024
 #define MAX_FILES_PER_DIRECTORY 256
+#define MAX_JOBS_STORAGE 32
 
 #define HEARTBEAT 1
 
 // Naming Serever States
 
-#define INITIALIZING 0
-#define CONNECTING_TO_STORAGE 1
-#define READY 2
+#define JOB_UNALLOCATED 0
+#define JOB_ALLOCATED 1
+#define JOB_PROCESSING 2
+#define JOB_COMPLETED 3
+#define JOB_FAILED 4
 
 // char ROOT_ADDRESS[] = "./storage_server/root"
 // client stuff

@@ -5,3 +5,4 @@ Assumption: Storage server needs to be initialized with a root directory where a
 001: No root directory found on a storage server
 002: Multiple root ditectories found
 003: Unable to send data over the network
+004: Error receiving request, asking to resend
