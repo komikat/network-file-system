@@ -104,3 +104,11 @@ void recver(int sockfd, char *buf, int len, int flags) {
         exit(1);
     };
 }
+
+
+void sender(int sockfd, char *buf, int len) {
+    if ((send(sockfd, buf, len, 0)) == -1) {
+        fprintf(stderr, "Issues sending req: %d\n", errno);
+        exit(0);
+    };
+}
