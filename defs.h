@@ -18,9 +18,9 @@
 #include <unistd.h>
 #include "job_queue.h"
 
-#define PORT_NSS "8011" // ns <-> ss
-#define PORT_NSC "8012" // client <-> ns
-#define PORT_SSC "8013" // client <-> ss
+#define PORT_NSS "8000" // ns <-> ss
+#define PORT_NSC "8001" // client <-> ns
+#define PORT_SSC "8002" // client <-> ss
 
 
 #define LRU_LENGTH 10

@@ -24,12 +24,11 @@ int sendFilesRecursively(char *rootPath, int sockfd, int jobid) {
 
         if (!(S_ISDIR(statbuf.st_mode))) {
             // Print the file path
-            char *data = (char *) malloc(sizeof(char) * 1040);
-            snprintf(data, strlen(path) + 32, "REQ %d 0 %o %lld %s;", jobid, statbuf.st_mode,
-                     (long long int) statbuf.st_size, path);     // 0 for file, size, path
+            char *data = (char *)malloc(sizeof(char) * 1040);
+            snprintf(data, strlen(path) + 32, "REQ %d 0 %o %lld %s;", jobid, statbuf.st_mode, (long long int)statbuf.st_size, path);     // 0 for file, size, path
             int check = 1;
             // printf("%s\n", data);
-            while (check) {  // Tries to send thrice
+            while (check){  // Tries to send thrice
                 check *= sendData(data, sockfd);
                 if (check >= 8) {
                     free(data);
@@ -38,15 +37,15 @@ int sendFilesRecursively(char *rootPath, int sockfd, int jobid) {
                 }
             }
             free(data);
-        } else {
+        }
+        else {
             if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
                 // Recursively list files in the subdirectory
-                char *data = (char *) malloc(sizeof(char) * 1040);
-                snprintf(data, strlen(path) + 32, "REQ %d 1 %o %lld %s;", jobid, statbuf.st_mode,
-                         (long long int) statbuf.st_size, path);     // 1 for folder, size, path
+                char *data = (char *)malloc(sizeof(char) * 1040);
+                snprintf(data, strlen(path) + 32, "REQ %d 1 %o %lld %s;", jobid, statbuf.st_mode, (long long int)statbuf.st_size, path);     // 1 for folder, size, path
                 int check = 1;
                 // printf("%s\n", data);
-                while (check) {  // Tries to send thrice
+                while (check){  // Tries to send thrice
                     check *= sendData(data, sockfd);
                     if (check >= 8) {
                         free(data);
@@ -67,7 +66,7 @@ int sendFilesRecursively(char *rootPath, int sockfd, int jobid) {
 // 0 on failure, 1 on success
 int sendError(int sockfd, int code, char *message) {
     int len = strlen(message);
-    char buffer[len + 16];
+    char buffer[len+16];
     sprintf(buffer, "ERROR %d %s\n", code, message);
     if ((send(sockfd, buffer, BUFFER, 0)) == -1) {
         fprintf(stderr, "Issues sending message: %d\n", errno);
@@ -88,73 +87,78 @@ int sendData(char *data, int sockfd) {
     return 0;
 }
 
+// Create a file or folder and return the size
+long long int createEntity(char *filePath, int type) {
+
+    struct stat statbuf;
+    if (type) {
+        mkdir(filePath, 0777);
+        DIR *dir = opendir(filePath);
+        if (dir == NULL) {
+            perror("Error creating Directory...\n");
+            return -1;
+        }
+        closedir(dir);
+    }
+    else {
+        FILE *file = fopen(filePath, "w");
+        if (file == NULL) {
+            perror("Error creating File...\n");
+            return -1;
+        }
+        fclose(file);
+    }
+
+    stat(filePath, &statbuf);
+
+    return (long long int) statbuf.st_size; // Returning size
+}
 
 
+// Delete directory or file
+int deleteDirectory(const char *path) {
+    DIR *dir;
+    struct dirent *entry;
 
-// // Create a file or folder and return the size
-// char *createEntity(char *filePath, int type) {
+    if (!(dir = opendir(path))) {
+        perror("opendir");
+        return -1;
+    }
 
-//     if (type) {
-//         mkdir(filePath);
-//     }
-//     else {
-//         FILE *file = fopen(filePath, "w");
-//     }
-//     struct stat statbuf;
-//     stat(filePath, &statbuf);
+    while ((entry = readdir(dir)) != NULL) {
+        char fullpath[1024];
 
-//     if (file == NULL) {
-//         perror("Error creating file");
-//         return -1;
-//     }
+        // Skip "." and ".." directories
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
 
-//     fclose(file);
-//     return fopen(filePath, "r+"); // Open the file for reading and writing
-// }
+        snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
 
-// int deleteDirectory(const char *path) {
-//     DIR *dir;
-//     struct dirent *entry;
+        if (entry->d_type == DT_DIR) {
+            // Recursive call to delete subdirectories
+            if (!deleteDirectory(fullpath)) {
+                closedir(dir);
+                return 0;
+            }
+            else return -1;
+        } else {
+            // Delete regular files
+            if (remove(fullpath) != 0) {
+                perror("remove");
+                closedir(dir);
+                return -1;
+            }
+        }
+    }
 
-//     if (!(dir = opendir(path))) {
-//         perror("opendir");
-//         return -1;
-//     }
+    closedir(dir);
 
-//     while ((entry = readdir(dir)) != NULL) {
-//         char fullpath[1024];
+    // Remove the directory itself
+    if (rmdir(path) != 0) {
+        perror("rmdir");
+        return -1;
+    }
 
-//         // Skip "." and ".." directories
-//         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-//             continue;
-//         }
-
-//         snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
-
-//         if (entry->d_type == DT_DIR) {
-//             // Recursive call to delete subdirectories
-//             if (!deleteDirectory(fullpath)) {
-//                 closedir(dir);
-//                 return 0;
-//             }
-//             else return -1;
-//         } else {
-//             // Delete regular files
-//             if (remove(fullpath) != 0) {
-//                 perror("remove");
-//                 closedir(dir);
-//                 return -1;
-//             }
-//         }
-//     }
-
-//     closedir(dir);
-
-//     // Remove the directory itself
-//     if (rmdir(path) != 0) {
-//         perror("rmdir");
-//         return 0;
-//     }
-
-//     return 1;
-// }
+    return 0;
+}

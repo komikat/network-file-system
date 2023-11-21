@@ -54,6 +54,57 @@ typedef struct client_args {
     char address[INET6_ADDRSTRLEN];
 } *ctargs;
 
+void sendOptions(char *CLIENT_BUFFER, int sock) {
+    rresult tmp = (struct r_result_ *) malloc(sizeof(struct r_result_));
+
+    char options[16384];
+    options[0] = '\0';
+    char temp[1024];
+
+    int pos;
+    for (int i = 0; i < strlen(CLIENT_BUFFER); i++) {
+        if (CLIENT_BUFFER[i] == '/') pos = i+1;
+    }
+
+    for (int i = 0; i < no_stores; i++) {
+
+        rsearch(CLIENT_BUFFER, storages[i]->root, tmp);
+
+        while (tmp != NULL) {
+            if (tmp->found != NULL && tmp->found->path != NULL && strcmp(tmp->found->name, &CLIENT_BUFFER[pos]) == 0) {
+                printf("Path: %s\n", tmp->found->path);
+                snprintf(temp, sizeof(temp), "%s %s\n", storages[i]->ip, tmp->found->path);
+                strcat(options, temp);
+            }
+            tmp = tmp->next;
+        }
+    }
+    if ((send(sock, options, strlen(options), 0)) == -1) {
+        fprintf(stderr, "Issues sending message: %d\n", errno);
+    }
+}
+
+void sendChildren(struct node *nd, int clientsock) {
+    char temp[4096];
+    temp[0] = '\0';
+    for (int i = 0; i < nd->no_child; i++) {
+        strcat(temp, nd->children[i]->name);
+        strcat(temp, "\n");
+    }
+    if ((send(clientsock, temp, strlen(temp), 0)) == -1) {
+        fprintf(stderr, "Issues sending message: %d\n", errno);
+    }
+}
+
+void sendInfo(struct node *nd, int clientsock) {
+    char temp[4096];
+    if (nd->type) snprintf(temp, sizeof(temp), "Path: %s\tDIRECTORY\tPermissions: %o\tSize: %lld\n", nd->path, nd->perms, nd->size);
+    else snprintf(temp, sizeof(temp), "Path: %s\tFILE\tPermissions: %o\tSize: %lld\n", nd->path, nd->perms, nd->size);
+    if ((send(clientsock, temp, strlen(temp), 0)) == -1) {
+        fprintf(stderr, "Issues sending message: %d\n", errno);
+    }
+}
+
 void *client_handler(void *args) {
     int client_idx = ((struct client_args *) args)->client_idx;
     int client_sock = ((struct client_args *) args)->client_sock;
@@ -63,12 +114,11 @@ void *client_handler(void *args) {
     recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
     send(client_sock, "ACK", 4, 0);
 
-
-
     // job result = dequeue(tmp);
     // strcpy(CLIENT_BUFFER, "test");
 
     for (;;) {
+        memset(CLIENT_BUFFER, '\0', sizeof(CLIENT_BUFFER));
         recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
         printf("(%s): %s\n", client_address, CLIENT_BUFFER);
         if (strcmp(CLIENT_BUFFER, "END") == 0) {
@@ -77,21 +127,80 @@ void *client_handler(void *args) {
             int ret = 1;
             pthread_exit(&ret);
         }
+
         printf("%s\n", CLIENT_BUFFER);
-        if (strstr(CLIENT_BUFFER, "LIST") == 0) {
-            // struct searchres *res = (struct searchres *)malloc(sizeof(struct searchres));
-            // res->list = NULL;
-            // res->len = 0;
-            rresult tmp = (struct r_result_ *) malloc(sizeof(struct r_result_));
-            printf("client: %s\n", CLIENT_BUFFER);
 
-            rsearch(&CLIENT_BUFFER[4], storages[0]->root, tmp);
-
-            while (tmp != NULL) {
-                if (tmp->found != NULL && tmp->found->path != NULL)
-                    printf("%s\n", tmp->found->path);
-                tmp = tmp->next;
+        char *command = strtok(CLIENT_BUFFER, " ");
+        if (strcmp(command, "LIST") == 0) {
+            // printf("client: %s\n", CLIENT_BUFFER);
+            sendOptions(strtok(NULL, " "), client_sock);
+            memset(CLIENT_BUFFER, '\0', sizeof(CLIENT_BUFFER));
+            recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+            printf("Recieved: %s\n", CLIENT_BUFFER);
+            char *ip = strtok(CLIENT_BUFFER, " ");
+            char *path = strtok(NULL, " ");
+            struct node *found = 0;
+            for (int i = 0; i < no_stores; i++) {
+                if (strcmp(storages[i]->ip, ip) == 0) {
+                    printf("Found storage server\n");
+                    char **list = NULL;
+                    int el = 0;
+                    char *tok = strtok(path, "/");
+                    tok = strtok(NULL, "/");
+                    tok = strtok(NULL, "/");
+                    while (tok != NULL) {
+                        el += 1;
+                        list = (char **)realloc(list, sizeof(char *) * el);
+                        list[el -1] = (char *)malloc(sizeof(char) * strlen(tok));
+                        strcpy(list[el - 1], tok);
+                        tok = strtok(NULL, "/");
+                    }
+                    printf("Searching\n");
+                    for (int i = 0; i < el; i++) {
+                        printf("%s\n", list[i]);
+                    }
+                    found = absoluteSearch(list, el, storages[i]->root);
+                    printf("Found: %s\n", found->name);
+                    break;
+                }
             }
+            sendChildren(found, client_sock);
+        }
+
+        else if (strcmp(command, "GETINFO") == 0) {
+            // printf("client: %s\n", CLIENT_BUFFER);
+            sendOptions(strtok(NULL, " "), client_sock);
+            memset(CLIENT_BUFFER, '\0', sizeof(CLIENT_BUFFER));
+            recver(client_sock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+            printf("Recieved: %s\n", CLIENT_BUFFER);
+            char *ip = strtok(CLIENT_BUFFER, " ");
+            char *path = strtok(NULL, " ");
+            struct node *found = 0;
+            for (int i = 0; i < no_stores; i++) {
+                if (strcmp(storages[i]->ip, ip) == 0) {
+                    printf("Found storage server\n");
+                    char **list = NULL;
+                    int el = 0;
+                    char *tok = strtok(path, "/");
+                    tok = strtok(NULL, "/");
+                    tok = strtok(NULL, "/");
+                    while (tok != NULL) {
+                        el += 1;
+                        list = (char **)realloc(list, sizeof(char *) * el);
+                        list[el -1] = (char *)malloc(sizeof(char) * strlen(tok));
+                        strcpy(list[el - 1], tok);
+                        tok = strtok(NULL, "/");
+                    }
+                    printf("Searching\n");
+                    for (int i = 0; i < el; i++) {
+                        printf("%s\n", list[i]);
+                    }
+                    found = absoluteSearch(list, el, storages[i]->root);
+                    printf("Found: %s\n", found->name);
+                    break;
+                }
+            }
+            sendInfo(found, client_sock);
         }
         // else if (strcmp(command, "CREATE") == 0) {
         //     //

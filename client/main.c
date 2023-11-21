@@ -60,6 +60,9 @@ int main() {
                 printf("ERROR: UNRECOGNIZED COMMAND. RE-Enter\n");
                 continue;
             }
+
+
+
             sender(sockfd,msg_real, strlen(msg_real));
 
 
@@ -67,54 +70,93 @@ int main() {
 
 
 
-            if(!strcmp(token,"CREATE") || !strcmp(token, "DELETE")){
+            if(!strcmp(token,"CREATE")){
                 recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
                 char opt[CLIENT_BUFFER_LENGTH];
                 char ip[CLIENT_BUFFER_LENGTH];
-                opt[strcspn(opt, "\n")] = 0;
                 fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
+                opt[strcspn(opt, "\n")] = 0;
                 selecting_option(CLIENT_BUFFER,atoi(opt));
-                sscanf(OPTION_BUFFER,"%s|%s",ip,opt);
+                sender(sockfd,msg_real,CLIENT_BUFFER_LENGTH);
+            }else if(!strcmp(token, "DELETE")){
+                recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+                char opt[CLIENT_BUFFER_LENGTH];
+                char ip[CLIENT_BUFFER_LENGTH];
+                fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
+                opt[strcspn(opt, "\n")] = 0;
+                selecting_option(CLIENT_BUFFER,atoi(opt));
+                sprintf(OPTION_BUFFER,"%s %s",ip,opt);
                 int storagesock = initconn(ip, PORT_SSC);
                 sender(storagesock, msg_real, strlen(msg_real));
                 recver(storagesock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
                 close(storagesock);
-            }
-            else if(!strcmp(token,"DELETE")){
+            }else if(!strcmp(token,"LIST")){
                 recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
-                char opt[5];
+                char opt[CLIENT_BUFFER_LENGTH];
+                char ip[CLIENT_BUFFER_LENGTH];
+                fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
                 opt[strcspn(opt, "\n")] = 0;
-                fgets(opt, 5, stdin);
                 selecting_option(CLIENT_BUFFER,atoi(opt));
-            }else if(!strcmp(token, ))
-
-
-            sender(sockfd, msg_real, strlen(msg_real));
-            recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
-            if (!expect_storage) { // no need to contact storage server
-                printf("%s\n", CLIENT_BUFFER);
-                if (strchr(CLIENT_BUFFER, '\n')) {
-                    fgeter();
-                    sender(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH);
-                    recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
-                    printf("%s\n", CLIENT_BUFFER);
-                }
-            } else { // contacting storage server
-                printf("%s\n", CLIENT_BUFFER);
-                if (strchr(CLIENT_BUFFER, '\n')) {
-                    char option[2] = "\0\0";
-                    scanf("%s", option);
-                    sender(sockfd, option, strlen(option));
-                    recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
-                    printf("%s\n", CLIENT_BUFFER);
-                }
-                // now to send to storage server
-                // TODO : read needs to send file size as well
-                int storagesock = initconn("CLIENT_BUFFER", PORT_SSC);
-                sender(storagesock, msg_real, strlen(msg_real));
+                sprintf(OPTION_BUFFER,"%s %s",ip,opt);
+                sender(sockfd,OPTION_BUFFER,CLIENT_BUFFER_LENGTH);
+            }else if(!strcmp(token, "WRITE")){
+                recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+                char opt[CLIENT_BUFFER_LENGTH];
+                char ip[CLIENT_BUFFER_LENGTH];
+                fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
+                opt[strcspn(opt, "\n")] = 0;
+                selecting_option(CLIENT_BUFFER,atoi(opt));
+                token = strtok_r(msg," ", NULL);
+                token = strtok_r(msg," ", NULL);
+                sscanf(OPTION_BUFFER,"WRITE %s %s",opt, token);
+                int storagesock = initconn(ip, PORT_SSC);
+                sender(storagesock, OPTION_BUFFER, strlen(msg_real));
                 recver(storagesock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
                 close(storagesock);
+            }else if(!strcmp(token,"COPY")){
+                recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+            }else if(!strcmp(token, "READ")){
+                recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+                char opt[CLIENT_BUFFER_LENGTH];
+                char ip[CLIENT_BUFFER_LENGTH];
+                fgets(opt, CLIENT_BUFFER_LENGTH, stdin);
+                opt[strcspn(opt, "\n")] = 0;
+                selecting_option(CLIENT_BUFFER,atoi(opt));
+                sscanf(OPTION_BUFFER,"READ %s",opt);
+                int storagesock = initconn(ip, PORT_SSC);
+                sender(storagesock, OPTION_BUFFER, strlen(msg_real));
+                recver(storagesock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+                close(storagesock);
+            }else if(!strcmp(token, "GETINFO")){
+                recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
             }
+            printf("%s", CLIENT_BUFFER);
+            // sender(sockfd, msg_real, strlen(msg_real));
+            // recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+            // if (!expect_storage) { // no need to contact storage server
+            //     printf("%s\n", CLIENT_BUFFER);
+            //     if (strchr(CLIENT_BUFFER, '\n')) {
+            //         fgeter();
+            //         sender(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH);
+            //         recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+            //         printf("%s\n", CLIENT_BUFFER);
+            //     }
+            // } else { // contacting storage server
+            //     printf("%s\n", CLIENT_BUFFER);
+            //     if (strchr(CLIENT_BUFFER, '\n')) {
+            //         char option[2] = "\0\0";
+            //         scanf("%s", option);
+            //         sender(sockfd, option, strlen(option));
+            //         recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+            //         printf("%s\n", CLIENT_BUFFER);
+            //     }
+            //     // now to send to storage server
+            //     // TODO : read needs to send file size as well
+            //     int storagesock = initconn("CLIENT_BUFFER", PORT_SSC);
+            //     sender(storagesock, msg_real, strlen(msg_real));
+            //     recver(storagesock, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
+            //     close(storagesock);
+            // }
             printf("OPERATION COMPLETE, ON TO THE NEXT!\n");
         }
     } else {
