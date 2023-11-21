@@ -18,13 +18,13 @@
 #include <unistd.h>
 #include "job_queue.h"
 
-#define PORT_NSS "8000" // ns <-> ss
-#define PORT_NSC "8001" // client <-> ns
-#define PORT_SSC "8002" // client <-> ss
+#define PORT_NSS "8001" // ns <-> ss
+#define PORT_NSC "8002" // client <-> ns
+#define PORT_SSC "8003" // client <-> ss
 
 
 #define LRU_LENGTH 10
-#define SERVER_ADDR "192.168.1.159"
+#define SERVER_ADDR "localhost"
 #define BACKLOG 10
 #define BUFFER 1024
 #define MAX_FILES_PER_DIRECTORY 256
