@@ -105,6 +105,33 @@ void recver(int sockfd, char *buf, int len, int flags) {
     };
 }
 
+// Function to get IP address from socket
+char *getip(int sockfd) {
+    struct sockaddr_storage addr;
+    socklen_t addr_len = sizeof(addr);
+
+    if (getpeername(sockfd, (struct sockaddr *) &addr, &addr_len) == 0) {
+        // The socket is connected, and addr now contains the peer's address
+        char *ipstr = (char *) malloc(sizeof(char) * INET6_ADDRSTRLEN);
+        int port;
+
+        if (addr.ss_family == AF_INET) {
+            struct sockaddr_in *s = (struct sockaddr_in *) &addr;
+            port = ntohs(s->sin_port);
+            inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+        } else { // AF_INET6
+            struct sockaddr_in6 *s = (struct sockaddr_in6 *) &addr;
+            port = ntohs(s->sin6_port);
+            inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
+        }
+
+        // printf("Peer IP address: %s\n", ipstr);
+        return ipstr;
+    } else {
+        perror("Could not get IP address...\n");
+    }
+}
+
 
 void sender(int sockfd, char *buf, int len) {
     if ((send(sockfd, buf, len, 0)) == -1) {

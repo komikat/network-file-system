@@ -124,34 +124,6 @@ void *client_handler(void *args) {
 }
 
 
-// Function to get IP address from socket
-char *getip(int sockfd) {
-    struct sockaddr_storage addr;
-    socklen_t addr_len = sizeof(addr);
-
-    if (getpeername(sockfd, (struct sockaddr *) &addr, &addr_len) == 0) {
-        // The socket is connected, and addr now contains the peer's address
-        char *ipstr = (char *) malloc(sizeof(char) * INET6_ADDRSTRLEN);
-        int port;
-
-        if (addr.ss_family == AF_INET) {
-            struct sockaddr_in *s = (struct sockaddr_in *) &addr;
-            port = ntohs(s->sin_port);
-            inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
-        } else { // AF_INET6
-            struct sockaddr_in6 *s = (struct sockaddr_in6 *) &addr;
-            port = ntohs(s->sin6_port);
-            inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
-        }
-
-        // printf("Peer IP address: %s\n", ipstr);
-        return ipstr;
-    } else {
-        perror("Could not get IP address...\n");
-    }
-}
-
-
 void *client_listener(void *sfd_client_pass) {
     int main_listener = *((int *) sfd_client_pass);
 
@@ -189,12 +161,6 @@ void *client_listener(void *sfd_client_pass) {
 
 }
 
-
-void *manager(void *args_job) {
-    job job_todo = ((job) args_job);
-
-
-}
 
 // Function to initialize tree for a storage server
 // and keep receiving its messages
@@ -329,8 +295,8 @@ void *storage_handler(void *sock) {
 // }
 
 int main() {
-    int sfd_client = initserver("localhost", PORT_NSC);
-    int sfd_storage = initserver("localhost", PORT_NSS);
+    int sfd_client = initserver(SERVER_ADDR, PORT_NSC);
+    int sfd_storage = initserver(SERVER_ADDR, PORT_NSS);
     // keep accepting requests
 
     pthread_t storage_listen, client_listen;

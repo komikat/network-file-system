@@ -31,4 +31,8 @@ int initserver(char *addr, char *port);
 
 int initconn(char *addr, char *port);
 
+// Function to get IP address from socket
+char *getip(int sockfd);
+
+
 #endif // HELPER_H_

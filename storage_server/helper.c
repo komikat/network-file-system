@@ -24,11 +24,12 @@ int sendFilesRecursively(char *rootPath, int sockfd, int jobid) {
 
         if (!(S_ISDIR(statbuf.st_mode))) {
             // Print the file path
-            char *data = (char *)malloc(sizeof(char) * 1040);
-            snprintf(data, strlen(path) + 32, "REQ %d 0 %o %lld %s;", jobid, statbuf.st_mode, (long long int)statbuf.st_size, path);     // 0 for file, size, path
+            char *data = (char *) malloc(sizeof(char) * 1040);
+            snprintf(data, strlen(path) + 32, "REQ %d 0 %o %lld %s;", jobid, statbuf.st_mode,
+                     (long long int) statbuf.st_size, path);     // 0 for file, size, path
             int check = 1;
             // printf("%s\n", data);
-            while (check){  // Tries to send thrice
+            while (check) {  // Tries to send thrice
                 check *= sendData(data, sockfd);
                 if (check >= 8) {
                     free(data);
@@ -37,15 +38,15 @@ int sendFilesRecursively(char *rootPath, int sockfd, int jobid) {
                 }
             }
             free(data);
-        }
-        else {
+        } else {
             if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
                 // Recursively list files in the subdirectory
-                char *data = (char *)malloc(sizeof(char) * 1040);
-                snprintf(data, strlen(path) + 32, "REQ %d 1 %o %lld %s;", jobid, statbuf.st_mode, (long long int)statbuf.st_size, path);     // 1 for folder, size, path
+                char *data = (char *) malloc(sizeof(char) * 1040);
+                snprintf(data, strlen(path) + 32, "REQ %d 1 %o %lld %s;", jobid, statbuf.st_mode,
+                         (long long int) statbuf.st_size, path);     // 1 for folder, size, path
                 int check = 1;
                 // printf("%s\n", data);
-                while (check){  // Tries to send thrice
+                while (check) {  // Tries to send thrice
                     check *= sendData(data, sockfd);
                     if (check >= 8) {
                         free(data);
@@ -66,7 +67,7 @@ int sendFilesRecursively(char *rootPath, int sockfd, int jobid) {
 // 0 on failure, 1 on success
 int sendError(int sockfd, int code, char *message) {
     int len = strlen(message);
-    char buffer[len+16];
+    char buffer[len + 16];
     sprintf(buffer, "ERROR %d %s\n", code, message);
     if ((send(sockfd, buffer, BUFFER, 0)) == -1) {
         fprintf(stderr, "Issues sending message: %d\n", errno);
@@ -86,6 +87,9 @@ int sendData(char *data, int sockfd) {
     printf("Sent\n");
     return 0;
 }
+
+
+
 
 // // Create a file or folder and return the size
 // char *createEntity(char *filePath, int type) {
