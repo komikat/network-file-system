@@ -1,13 +1,5 @@
 #include "./../defs.h"
 #include "naming.h"
-void printTree(struct node *nod) {
-    printf("%s\n", nod->name);
-    if (nod->type == 1) {
-        for (int i = 0; i < nod->no_child; i++) {
-            printTree(nod->children[i]);
-        }
-    }
-}
 
 #define BACKLOG 10
 // #define MAX_STORES 64
@@ -22,11 +14,12 @@ struct searchres {
 };
 
 // Function to print tree
-void printTree(struct node *nod) {
+void printTree(struct node *nod, int tabs) {
+    for (int i = 0; i < tabs; i++) printf("\t");
     printf("%s\n", nod->name);
     if (nod->type == 1) {
         for (int i = 0; i < nod->no_child; i++) {
-            printTree(nod->children[i]);
+            printTree(nod->children[i], tabs + 1);
         }
     }
 }
@@ -96,11 +89,11 @@ void *client_handler(void *args) {
             printf("\n\n");
 
             // if (strcmp(command, "LIST") == 0) {
-            //     struct searchres *res = (struct searchres *)malloc(sizeof(struct searchres));
-            //     res->list = NULL;
-            //     res->len = 0;
+            //     // struct searchres *res = (struct searchres *)malloc(sizeof(struct searchres));
+            //     // res->list = NULL;
+            //     // res->len = 0;
             //     for (int i = 0; i < no_stores; i++) {
-            //         searchServer(list, storages[i]->root, elno, res);
+            //         absoluteSearch(list, storages[i]->root, elno, res);
             //     }
             // }
             // else if (strcmp(command, "CREATE") == 0) {
@@ -254,10 +247,11 @@ void *storage_handler(void *sock) {
             // for every node in buffer
             while (tok != NULL) {
 
-                // printf("Token: %s\n\n", tok);
+                printf("Token: %s\n\n", tok);
 
                 // Check if over
-                if (strcmp(tok, "REQ -1 STOP;") == 0) {
+                if (strcmp(tok, "REQ -1 STOP") == 0) {
+                    printf("Stopping\n");
                     receiving = 0;
                     locked = 0;
                     break;
@@ -266,7 +260,7 @@ void *storage_handler(void *sock) {
                 // make node
                 struct node *nd = (struct node *) malloc(sizeof(struct node));
                 int temp;
-                sscanf(tok, "REQ %d %d %d %lld %s", &temp, &nd->type, &nd->perms, &nd->size,
+                sscanf(tok, "REQ %d %d %o %lld %s", &temp, &nd->type, &nd->perms, &nd->size,
                        namebuf);
                 int pos = 0, parentpos = 0;
                 for (int i = 0; i < strlen(namebuf); i++) {
@@ -312,12 +306,12 @@ void *storage_handler(void *sock) {
                 else
                     parent = nd->parent;
 
-                if (nd->parent != NULL)
-                    printf("%d %o %lld %s Parent: %s\n", nd->type, nd->perms,
-                           nd->size, nd->name, nd->parent->name);
-                else
-                    printf("%d %o %lld %s Parent: NULL\n", nd->type, nd->perms,
-                           nd->size, nd->name);
+                // if (nd->parent != NULL)
+                //     printf("%d %o %lld %s Parent: %s\n", nd->type, nd->perms,
+                //            nd->size, nd->name, nd->parent->name);
+                // else
+                //     printf("%d %o %lld %s Parent: NULL\n", nd->type, nd->perms,
+                //            nd->size, nd->name);
                 tok = strtok(NULL, delim);
             }
         }
@@ -326,7 +320,7 @@ void *storage_handler(void *sock) {
     struct node *nod = storages[entry->id]->root;
     printf("Root: %s\n", nod->name);
     printf("ID: %d\nIP: %s\n\n", entry->id, entry->ip);
-    printTree(storages[entry->id]->root);
+    printTree(storages[entry->id]->root, 0);
 
     // TEST
     while (1) {
