@@ -20,12 +20,13 @@ struct storage {
     int red1;
     int red2;
     char *ip;
+    char *port_ns;
+    char *port_cs;
 };
 
-void recver(int sockfd, char *buf, int len, int flags);
+int recver(int sockfd, char *buf, int len, int flags);
 
-
-void sender(int sockfd, char *buf, int len) ;
+void sender(int sockfd, char *buf, int len);
 
 int initserver(char *addr, char *port);
 
@@ -33,6 +34,5 @@ int initconn(char *addr, char *port);
 
 // Function to get IP address from socket
 char *getip(int sockfd);
-
 
 #endif // HELPER_H_

@@ -3,13 +3,13 @@
 
 int sockfd;
 int running = 0;
+char root[256];
 int jobs[MAX_JOBS_STORAGE];
 // pthread_t threads[];
 
 char RECV_BUFFER[BUFFER];
 
 pthread_mutex_t serverlock;
-
 
 // Thred for heartbeat
 void *heartbeat() {
@@ -24,17 +24,17 @@ void *heartbeat() {
 
 // Function to initialize and send file tree
 void sendTree(int jobpos) {
-    char root[] = "./storage_server/root";
 
     struct stat statbuf;
     if (stat(root, &statbuf) == -1) {
         perror("Error getting file status");
     }
 
-    char *data = (char *) malloc(sizeof(char) * 1040);
-    snprintf(data, strlen(root) + 24, "REQ %d 1 %o 0 %s;", jobs[jobpos], statbuf.st_mode, root);
+    char *data = (char *)malloc(sizeof(char) * 1040);
+    snprintf(data, strlen(root) + 24, "REQ %d 1 %o 0 %s;", jobs[jobpos],
+             statbuf.st_mode, root);
     int check = 1;
-    while (check) {  // Tries to send thrice
+    while (check) { // Tries to send thrice
         check *= sendData(data, sockfd);
         if (check >= 8) {
             free(data);
@@ -46,8 +46,10 @@ void sendTree(int jobpos) {
     check = sendFilesRecursively(root, sockfd, jobs[jobpos]);
     if ((check) != 0) {
         char msg[] = "Error in initializing Storage Server!\n";
-        if (check != 3) sendError(sockfd, check, msg);
-        else fprintf(stderr, "Error in sending data to server...\n");
+        if (check != 3)
+            sendError(sockfd, check, msg);
+        else
+            fprintf(stderr, "Error in sending data to server...\n");
     }
 
     char stop[32];
@@ -55,15 +57,13 @@ void sendTree(int jobpos) {
     sendData(stop, sockfd);
 }
 
-
 typedef struct client_args {
     int client_idx;
     int client_sock;
     char address[INET6_ADDRSTRLEN];
 } *ctargs;
 
-int
-rmtree(const char path[]) {
+int rmtree(const char path[]) {
     size_t path_len;
     char *full_path;
     DIR *dir;
@@ -96,7 +96,8 @@ rmtree(const char path[]) {
             continue;
 
         // determinate a full path of an entry
-        full_path = calloc(path_len + 1 + strlen(entry->d_name) + 1, sizeof(char));
+        full_path =
+            calloc(path_len + 1 + strlen(entry->d_name) + 1, sizeof(char));
         strcpy(full_path, path);
         strcat(full_path, "/");
         strcat(full_path, entry->d_name);
@@ -143,15 +144,13 @@ void insert_LRU(char *file_path, char *contents) {
     pthread_mutex_unlock(&lru_mutex);
 }
 
-int increment_LRU_index() {
-    return (lru_index++) % LRU_LENGTH;
-}
+int increment_LRU_index() { return (lru_index++) % LRU_LENGTH; }
 
 void client_handler(void *args) {
-    int client_idx = ((struct client_args *) args)->client_idx;
-    int client_sock = ((struct client_args *) args)->client_sock;
+    int client_idx = ((struct client_args *)args)->client_idx;
+    int client_sock = ((struct client_args *)args)->client_sock;
 
-    char *client_address = ((struct client_args *) args)->address;
+    char *client_address = ((struct client_args *)args)->address;
     printf("%s connected.\n", client_address);
 
     char buffer[CLIENT_BUFFER_LENGTH] = {0};
@@ -230,12 +229,11 @@ void client_handler(void *args) {
                 sender(client_sock, LRU[lru_found], strlen(LRU[lru_found]) + 1);
                 int r = 1;
                 pthread_exit(&r);
-
             }
             FILE *f = fopen(file_path, "rb");
             fseek(f, 0, SEEK_END);
             long fsize = ftell(f);
-            fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+            fseek(f, 0, SEEK_SET); /* same as rewind(f); */
 
             char *string = malloc(fsize + 1);
             fread(string, fsize, 1, f);
@@ -247,14 +245,12 @@ void client_handler(void *args) {
             sender(client_sock, string, fsize);
             int r = 1;
             pthread_exit(&r);
-
         }
-
     }
 }
 
 void *client_listener(void *sfd_client_pass) {
-    int main_listener = *((int *) sfd_client_pass);
+    int main_listener = *((int *)sfd_client_pass);
 
     struct sockaddr_storage client_addr;
     socklen_t addrlen;
@@ -266,39 +262,64 @@ void *client_listener(void *sfd_client_pass) {
     int client_count = 0;
     pthread_t client_thread[MAX_CLIENT];
 
-
     for (;;) {
         // wait for new connections
         // if new connection
         // check if listener
         // if listener => create a new thread
         int poll_count = poll(client_fds, 1, -1);
-        int client_new_fd = accept(main_listener, (struct sockaddr *) &client_addr, &addrlen);
+        int client_new_fd =
+            accept(main_listener, (struct sockaddr *)&client_addr, &addrlen);
 
-        ctargs tmp = (ctargs) malloc(sizeof(struct client_args));
+        ctargs tmp = (ctargs)malloc(sizeof(struct client_args));
         tmp->client_idx = client_count;
         tmp->client_sock = client_new_fd;
         strcpy(tmp->address, getip(client_new_fd));
 
-        pthread_create(&client_thread[client_count], NULL, client_handler, (void *) tmp);
+        pthread_create(&client_thread[client_count], NULL, client_handler,
+                       (void *)tmp);
         client_count++;
 
         if (tmp->client_idx == MAX_CLIENT) {
             break;
         }
     }
-
 }
 
-int main() {
+int main(int argc, char **argv) {
+
+    if (argc != 4) {
+        printf("Please pass correct arguments.\n");
+        return -1;
+    }
+
+    char *port_ns = argv[1];
+    char *port_cs = argv[2];
+    strcpy(root, argv[3]);
 
     // Initiate connection with Naming Server
-    sockfd = initconn(SERVER_ADDR, PORT_NSS);
-    int sockfd_client = initserver(SERVER_ADDR, PORT_SSC);
+    int init_sockfd = initconn(SERVER_ADDR, PORT_NSS);
+    sender(init_sockfd, port_ns, 4); // send port to nm
+
+    char temp[4] = {0};
+    recver(init_sockfd, temp, 4, 0);
+    sender(init_sockfd, port_cs, 4);
+    recver(init_sockfd, temp, 4, 0);
+
+    if (atoi(temp) != atoi(port_cs)) {
+        printf("Wrong recv: %s, %s\n", temp, port_cs);
+        close(sockfd);
+        return -1;
+    } else {
+        printf("Got ack!\n");
+    }
+    sockfd = initconn(SERVER_ADDR, port_ns);
+    int sockfd_client = initserver(SERVER_ADDR, port_cs);
 
     pthread_t client_listen;
     pthread_create(&client_listen, NULL, client_listener, &sockfd_client);
-    if (sockfd != -1) running = 1;
+    if (sockfd != -1)
+        running = 1;
     else {
         printf("Could not initialize server...\n");
         return 0;
@@ -311,16 +332,17 @@ int main() {
     // pthread_join(heart, NULL);
 
     // Inititlize job array
-    for (int i = 0; i < MAX_JOBS_STORAGE; i++) jobs[i] = -1;
+    for (int i = 0; i < MAX_JOBS_STORAGE; i++)
+        jobs[i] = -1;
 
     while (1) {
 
         // Recieve requests from Naming Server
         int r;
-        if ((r = recv(sockfd, RECV_BUFFER, BUFFER,
-                      0)) == -1) {
+        if ((r = recv(sockfd, RECV_BUFFER, BUFFER, 0)) == -1) {
             fprintf(stderr, "Issues recv reqs: %d\n", errno);
-            sendError(sockfd, 4, "Could not receive request, please resend...\n");
+            sendError(sockfd, 4,
+                      "Could not receive request, please resend...\n");
             continue;
         };
 

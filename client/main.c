@@ -50,13 +50,14 @@ int main() {
             char *msg_real = strdup(msg);
             char *saveptr = strdup(msg);
 
-
             char *token = strtok_r(msg, " ", &saveptr);
             if (!strcmp(token, "CREATE") || !strcmp(token, "DELETE") ||
-                !strcmp(token, "GETINFO") || !strcmp(token, "COPY") || !strcmp(token, "LIST")) {
+                !strcmp(token, "GETINFO") || !strcmp(token, "COPY") ||
+                !strcmp(token, "LIST")) {
                 expect_storage = 0;
                 printf("no storage\n");
-            } else if (!strcmp(token, "READ") || !strcmp(token, "WRITE") || !strcmp(token, "WRITE")) {
+            } else if (!strcmp(token, "READ") || !strcmp(token, "WRITE") ||
+                       !strcmp(token, "WRITE")) {
                 printf(" storage\n");
                 expect_storage = 1;
             } else {
@@ -64,14 +65,10 @@ int main() {
                 continue;
             }
 
-
             fputs(msg_real, peter);
             sender(sockfd, msg_real, strlen(msg_real));
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             if (!strcmp(token, "CREATE")) {
                 recver(sockfd, CLIENT_BUFFER, CLIENT_BUFFER_LENGTH, 0);
